@@ -1,7 +1,6 @@
 use rgb::RGB8;
 use std::cmp;
 use std::collections::HashMap;
-use rand::prelude::IndexedRandom;
 use rand::Rng;
 
 const COLORS: [RGB8; 9] = [
@@ -59,7 +58,7 @@ impl MastermindBoard {
     }
 
     pub fn guess(&mut self, guess: &Guess) -> GameState {
-        if (self.state.guesses.len() >= self.settings.max_tries as usize) {
+        if self.state.guesses.len() >= self.settings.max_tries as usize {
             return GameState::GameEnd { 0: false };
         }
 
@@ -87,7 +86,7 @@ impl BoardState {
 
         // Generate a random solution
         let solution: Vec<u8> = (0..settings.code_length)
-            .map(|_| rng.gen_range(0..settings.colors.len() as u8))
+            .map(|_| rng.random_range(0..settings.colors.len() as u8))
             .collect();
 
         Self { guesses: Vec::new(), answers: Vec::new(), code: solution }

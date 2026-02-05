@@ -27,6 +27,9 @@ serde = { version = "1.0.219", features = ["derive"] }
 mastermind = { path = ".." }
 rgb = { version = "0.8.52", features = ["serde"] }
 
+[target.wasm32-unknown-unknown.dependencies]
+getrandom = { version = "0.3", default-features = false, features = ["wasm_js"] }
+
 # native:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 env_logger = "0.11.8"
