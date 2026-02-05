@@ -67,9 +67,7 @@ impl Widget for MastermindWidget<'_> {
                     }
 
                     let answer_opt = self.board.state.answers.get(row as usize);
-
                     let mut markers = Vec::new();
-
                     if let Some(answer) = answer_opt {
                         if let GameState::GuessAnswer(right_pos, right_not_pos) = answer {
                             markers.append(&mut vec![1; *right_pos as usize]);
@@ -77,9 +75,11 @@ impl Widget for MastermindWidget<'_> {
                         }
                     }
 
+                    let max_circle_count = self.board.settings.code_length as usize;
+
                     ui.vertical(|ui| {
                         ui.horizontal(|ui| {
-                            for i in 0..2 {
+                            for i in 0..max_circle_count/2 {
                                 let (rect, response) = ui.allocate_exact_size(
                                     egui::Vec2::splat(GRID_SIZE / 2.0),
                                     egui::Sense::hover(),
@@ -98,7 +98,7 @@ impl Widget for MastermindWidget<'_> {
                             }
                         });
                         ui.horizontal(|ui| {
-                            for i in 2..4 {
+                            for i in max_circle_count/2..max_circle_count {
                                 let (rect, response) = ui.allocate_exact_size(
                                     egui::Vec2::splat(GRID_SIZE / 2.0),
                                     egui::Sense::hover(),
@@ -123,18 +123,21 @@ impl Widget for MastermindWidget<'_> {
 
                 // Guess
                 for col in 0..self.board.settings.code_length {
-                    let (rect, response) =
-                        ui.allocate_exact_size(egui::Vec2::splat(40.0), egui::Sense::click());
-                    if (response.clicked()) {
-                        self.guess_state.0[col as usize] += 1;
-                        self.guess_state.0[col as usize] %= self.board.settings.colors.len() as i16;
-                    }
-                    ui.painter().circle_filled(
-                        rect.center(),
-                        rect.width() / 2.0,
-                        self.board.settings.colors[self.guess_state.0[col as usize] as usize]
-                            .to_egui_color(),
-                    );
+                    ui.vertical(|ui| {
+                        //ui.separator();
+                        let (rect, response) =
+                            ui.allocate_exact_size(egui::Vec2::splat(40.0), egui::Sense::click());
+                        if (response.clicked()) {
+                            self.guess_state.0[col as usize] += 1;
+                            self.guess_state.0[col as usize] %= self.board.settings.colors.len() as i16;
+                        }
+                        ui.painter().circle_filled(
+                            rect.center(),
+                            rect.width() / 2.0,
+                            self.board.settings.colors[self.guess_state.0[col as usize] as usize]
+                                .to_egui_color(),
+                        );
+                    });
                 }
             });
         response
