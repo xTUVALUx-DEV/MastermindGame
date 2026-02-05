@@ -2,13 +2,28 @@ use rgb::RGB8;
 use std::cmp;
 use std::collections::HashMap;
 use rand::prelude::IndexedRandom;
+use rand::Rng;
+
+const COLORS: [RGB8; 9] = [
+    RGB8 { r: 241, g: 196, b:  15 },
+    RGB8 { r:  26, g: 188, b: 156 },
+    RGB8 { r:  52, g: 152, b: 219 },
+    RGB8 { r: 155, g:  89, b: 182 },
+    RGB8 { r: 192, g:  57, b:  43 },
+    RGB8 { r: 243, g: 156, b:  18 },
+    RGB8 { r:  22, g: 160, b: 133 },
+    RGB8 { r:  41, g: 128, b: 185 },
+    RGB8 { r: 142, g:  68, b: 173 },
+];
+
 
 #[derive(Debug, Default, Clone, serde::Deserialize, serde::Serialize)]
 // Todo: Implement Default
 pub struct BoardSettings {
     pub colors: Vec<RGB8>,
     pub code_length: u8,
-    pub max_tries: u8
+    pub max_tries: u8,
+    pub is_ended: bool
 }
 
 impl BoardSettings {
@@ -25,6 +40,10 @@ impl BoardSettings {
         self.max_tries = tries;
         self
     }
+
+    pub fn generate_colors(&mut self, number: i16) {
+        self.colors = COLORS[..number as usize].to_vec();
+    }
 }
 
 
@@ -40,6 +59,10 @@ impl MastermindBoard {
     }
 
     pub fn guess(&mut self, guess: &Guess) -> GameState {
+        if (self.state.guesses.len() >= self.settings.max_tries as usize) {
+            return GameState::GameEnd { 0: false };
+        }
+
         self.state.guess(guess)
     }
 }
@@ -52,10 +75,10 @@ impl Default for MastermindBoard {
 
 
 #[derive(Debug)]
-struct BoardState {
+pub struct BoardState {
     code: Vec<u8>,
-    guesses: Vec<Guess>,
-    answers: Vec<GameState>
+    pub guesses: Vec<Guess>,
+    pub answers: Vec<GameState>
 }
 
 impl BoardState {
@@ -63,14 +86,16 @@ impl BoardState {
         let mut rng = rand::rng();
 
         // Generate a random solution
-        let solution: Vec<u8> = (0..settings.code_length).collect::<Vec<_>>()
-            .choose_multiple(&mut rng, usize::from(settings.code_length))
-            .copied().collect();
+        let solution: Vec<u8> = (0..settings.code_length)
+            .map(|_| rng.gen_range(0..settings.colors.len() as u8))
+            .collect();
 
         Self { guesses: Vec::new(), answers: Vec::new(), code: solution }
     }
 
     fn guess(&mut self, guess: &Guess) -> GameState {
+        println!("Sol: {:?}", self.code);
+
         self.guesses.push(guess.clone());
         // Convert the code numbers to a hashmap
         let numbers_in_code: HashMap<_, _> = self.code.iter() 
@@ -87,12 +112,13 @@ impl BoardState {
         let right_position_count: u8 = guess.0.iter()
             .zip(self.code.iter()).filter(|(x, y)| x == y).count() as u8;
 
-        if usize::from(right_numbers_count) == self.code.len() {
-            return GameState::GameEnd { };
-        }
-
         let answer = GameState::GuessAnswer { 0: right_position_count, 1: right_numbers_count-right_position_count };
         self.answers.push(answer.clone());
+
+        if usize::from(right_position_count) == self.code.len() {
+            return GameState::GameEnd { 0: true };
+        }
+
         answer
     }
 }
@@ -104,11 +130,12 @@ pub struct Guess(pub Vec<u8>);
 #[derive(Debug, Clone)]
 pub enum GameState {
     GuessAnswer(u8, u8),
-    GameEnd,
+    // (#right_pos, #right_not_pos)
+    GameEnd(bool),
+    // (has_won)
 }
 
 impl GameState {
 
 }
-// (#right_pos, #right_not_pos)
 
