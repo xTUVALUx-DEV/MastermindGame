@@ -6,6 +6,9 @@ use mastermindlib::board::Guess;
 use rgb::RGB8;
 
 fn main() {
+    println!("To run the gui run the project in the ui directory!");
+
+    // Debug
     let settings = BoardSettings::default()
         .colors(vec![RGB8::new(255, 0, 0), RGB8::new(255, 0, 255), RGB8::new(255, 255, 0)])
         .code_length(4);
