@@ -77,6 +77,13 @@ impl Widget for MastermindWidget<'_> {
 
                     let max_circle_count = self.board.settings.code_length as usize;
 
+                    ui.with_layout(
+                        egui::Layout::left_to_right(egui::Align::Center).with_main_wrap(false),
+                        |ui| {
+                            ui.add_sized([0.3, ui.text_style_height(&egui::TextStyle::Body)*2.0],
+                                         egui::Separator::default());
+                        },
+                    );
                     ui.vertical(|ui| {
                         ui.horizontal(|ui| {
                             for i in 0..max_circle_count/2 {
