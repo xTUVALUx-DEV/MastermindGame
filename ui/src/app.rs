@@ -101,7 +101,7 @@ impl App {
                 ui.add_space(20.);
                 ui.hyperlink_to(
                     "Source Code",
-                    "https://gitub.com/xTUVALUx-DEV/MastermindGame/blob/main/",
+                    "https://github.com/xTUVALUx-DEV/MastermindGame/blob/main/",
                 );
             }
         }
