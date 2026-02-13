@@ -80,13 +80,15 @@ impl Widget for MastermindWidget<'_> {
                     ui.with_layout(
                         egui::Layout::left_to_right(egui::Align::Center).with_main_wrap(false),
                         |ui| {
-                            ui.add_sized([0.3, ui.text_style_height(&egui::TextStyle::Body)*2.0],
-                                         egui::Separator::default());
+                            ui.add_sized(
+                                [0.3, ui.text_style_height(&egui::TextStyle::Body) * 2.0],
+                                egui::Separator::default(),
+                            );
                         },
                     );
                     ui.vertical(|ui| {
                         ui.horizontal(|ui| {
-                            for i in 0..max_circle_count/2 {
+                            for i in 0..max_circle_count / 2 {
                                 let (rect, response) = ui.allocate_exact_size(
                                     egui::Vec2::splat(GRID_SIZE / 2.0),
                                     egui::Sense::hover(),
@@ -105,7 +107,7 @@ impl Widget for MastermindWidget<'_> {
                             }
                         });
                         ui.horizontal(|ui| {
-                            for i in max_circle_count/2..max_circle_count {
+                            for i in max_circle_count / 2..max_circle_count {
                                 let (rect, response) = ui.allocate_exact_size(
                                     egui::Vec2::splat(GRID_SIZE / 2.0),
                                     egui::Sense::hover(),
@@ -136,7 +138,8 @@ impl Widget for MastermindWidget<'_> {
                             ui.allocate_exact_size(egui::Vec2::splat(40.0), egui::Sense::click());
                         if (response.clicked()) {
                             self.guess_state.0[col as usize] += 1;
-                            self.guess_state.0[col as usize] %= self.board.settings.colors.len() as i16;
+                            self.guess_state.0[col as usize] %=
+                                self.board.settings.colors.len() as i16;
                         }
                         ui.painter().circle_filled(
                             rect.center(),

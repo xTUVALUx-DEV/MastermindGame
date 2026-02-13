@@ -1,5 +1,5 @@
 use egui::Widget;
-use mastermind::mastermindlib::board::{BoardSettings, Guess, MastermindBoard, GameState};
+use mastermind::mastermindlib::board::{BoardSettings, GameState, Guess, MastermindBoard};
 use rgb::RGB8;
 
 use crate::mastermindwidget::{GuessState, MastermindWidget};
@@ -59,6 +59,53 @@ impl App {
 
         app
     }
+
+    fn draw_ui(&mut self, ui: &mut egui::Ui) {
+        match self.current_page {
+            Page::Home => {
+                ui.heading("Mastermind");
+                MastermindWidget {
+                    board: &self.board,
+                    guess_state: &mut self.guess_state,
+                }
+                .ui(ui);
+                if ui.button("Guess").clicked() {
+                    if let GameState::GameEnd(has_won) =
+                        self.board.guess(&Guess::from(&self.guess_state))
+                    {
+                        if (has_won) {
+                            self.show_win = true;
+                        } else {
+                            self.show_loss = true;
+                        }
+                    }
+                }
+            }
+            Page::Settings => {
+                ui.heading("Settings");
+
+                ui.add(
+                    egui::Slider::new(&mut self.settings.code_length, 1..=10).text("Code Length"),
+                );
+
+                ui.add(egui::Slider::new(&mut self.settings.max_tries, 1..=12).text("Max Tries"));
+
+                let response =
+                    ui.add(egui::Slider::new(&mut self.color_count, 2..=9).text("Color Count"));
+                if response.changed() {
+                    self.settings.generate_colors(self.color_count);
+                }
+
+                ui.separator();
+
+                ui.add_space(20.);
+                ui.hyperlink_to(
+                    "Source Code",
+                    "https://gitub.com/xTUVALUx-DEV/MastermindGame/blob/main/",
+                );
+            }
+        }
+    }
 }
 
 impl eframe::App for App {
@@ -95,40 +142,13 @@ impl eframe::App for App {
             });
         });
 
-        egui::CentralPanel::default().show(ctx, |ui| match self.current_page {
-            Page::Home => {
-                ui.heading("Mastermind");
-                MastermindWidget {
-                    board: &self.board,
-                    guess_state: &mut self.guess_state,
-                }
-                .ui(ui);
-                if ui.button("Guess").clicked() {
-                    if let GameState::GameEnd(has_won) = self.board.guess(&Guess::from(&self.guess_state)) {
-                        if (has_won) {
-                            self.show_win = true;
-                        } else {
-                            self.show_loss = true;
-                        }
-                    }
-                }
+        egui::CentralPanel::default().show(ctx, |ui| {
+            let is_web = cfg!(target_arch = "wasm32");
+            if (is_web) {
+                ui.vertical_centered(|ui| self.draw_ui(ui));
+                return;
             }
-            Page::Settings => {
-                ui.heading("Settings");
-                ui.add(
-                    egui::Slider::new(&mut self.settings.code_length, 1..=10).text("Code Length"),
-                );
-
-                ui.add(egui::Slider::new(&mut self.settings.max_tries, 1..=12).text("Max Tries"));
-
-                let response =
-                    ui.add(egui::Slider::new(&mut self.color_count, 2..=9).text("Color Count"));
-                if response.changed() {
-                    self.settings.generate_colors(self.color_count);
-                }
-
-                ui.separator();
-            }
+            self.draw_ui(ui);
         });
 
         // Modals

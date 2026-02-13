@@ -93,8 +93,6 @@ impl BoardState {
     }
 
     fn guess(&mut self, guess: &Guess) -> GameState {
-        println!("Sol: {:?}", self.code);
-
         self.guesses.push(guess.clone());
         // Convert the code numbers to a hashmap
         let numbers_in_code: HashMap<_, _> = self.code.iter() 
