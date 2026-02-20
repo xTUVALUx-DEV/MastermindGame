@@ -4,11 +4,18 @@ use rgb::RGB8;
 
 use crate::mastermindwidget::{GuessState, MastermindWidget};
 
+#[derive(PartialEq, serde::Deserialize, serde::Serialize, Clone)]
+struct Preset {
+    settings: BoardSettings,
+    name: String,
+}
+
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)]
 pub struct App {
     settings: BoardSettings,
     color_count: i16,
+    selected_preset: Option<Preset>,
 
     #[serde(skip)]
     show_win: bool,
@@ -43,6 +50,7 @@ impl Default for App {
             current_page: Page::Home,
             show_loss: false,
             show_win: false,
+            selected_preset: None,
         }
     }
 }
@@ -84,16 +92,75 @@ impl App {
             Page::Settings => {
                 ui.heading("Settings");
 
-                ui.add(
-                    egui::Slider::new(&mut self.settings.code_length, 1..=10).text("Code Length"),
-                );
+                let selected_text = match &self.selected_preset {
+                    None => "Custom".to_string(),
+                    Some(preset) => preset.name.clone(),
+                };
 
-                ui.add(egui::Slider::new(&mut self.settings.max_tries, 1..=12).text("Max Tries"));
+                let previous = self.selected_preset.clone();
+                egui::ComboBox::from_label("Preset")
+                    .selected_text(selected_text)
+                    .show_ui(ui, |ui| {
+                        ui.selectable_value(
+                            &mut self.selected_preset,
+                            Some(Preset {
+                                name: "Easy".to_string(),
+                                settings: BoardSettings::default()
+                                    .with_n_colors(3)
+                                    .code_length(4)
+                                    .max_tries(5),
+                            }),
+                            "Easy",
+                        );
+                        ui.selectable_value(
+                            &mut self.selected_preset,
+                            Some(Preset {
+                                name: "Medium".to_string(),
+                                settings: BoardSettings::default()
+                                    .with_n_colors(5)
+                                    .code_length(6)
+                                    .max_tries(6),
+                            }),
+                            "Medium",
+                        );
+                        ui.selectable_value(
+                            &mut self.selected_preset,
+                            Some(Preset {
+                                name: "Hard".to_string(),
+                                settings: BoardSettings::default()
+                                    .with_n_colors(5)
+                                    .code_length(7)
+                                    .max_tries(7),
+                            }),
+                            "Hard",
+                        );
+                    });
+
+                if self.selected_preset != previous && self.selected_preset.is_some() {
+                    self.settings = self.selected_preset.clone().unwrap().settings;
+                }
+
+                let mut some_changed = false;
+                some_changed |= ui
+                    .add(
+                        egui::Slider::new(&mut self.settings.code_length, 1..=10)
+                            .text("Code Length"),
+                    )
+                    .changed();
+
+                some_changed |= ui
+                    .add(egui::Slider::new(&mut self.settings.max_tries, 1..=12).text("Max Tries"))
+                    .changed();
 
                 let response =
                     ui.add(egui::Slider::new(&mut self.color_count, 2..=9).text("Color Count"));
+                some_changed |= response.changed();
                 if response.changed() {
                     self.settings.generate_colors(self.color_count);
+                }
+
+                if some_changed {
+                    self.selected_preset = None;
                 }
 
                 ui.separator();

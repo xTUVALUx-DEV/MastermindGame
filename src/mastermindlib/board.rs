@@ -16,7 +16,7 @@ const COLORS: [RGB8; 9] = [
 ];
 
 
-#[derive(Debug, Default, Clone, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, Default, Clone, serde::Deserialize, serde::Serialize, PartialEq)]
 // Todo: Implement Default
 pub struct BoardSettings {
     pub colors: Vec<RGB8>,
@@ -42,6 +42,11 @@ impl BoardSettings {
 
     pub fn generate_colors(&mut self, number: i16) {
         self.colors = COLORS[..number as usize].to_vec();
+    }
+
+    pub fn with_n_colors(mut self, number: i16) -> Self {
+        self.colors = COLORS[..number as usize].to_vec();
+        self
     }
 }
 
@@ -95,7 +100,7 @@ impl BoardState {
     fn guess(&mut self, guess: &Guess) -> GameState {
         self.guesses.push(guess.clone());
         // Convert the code numbers to a hashmap
-        let numbers_in_code: HashMap<_, _> = self.code.iter() 
+        let numbers_in_code: HashMap<_, _> = self.code.iter()
             .map(|&n| (n, self.code.iter().filter(|&&x| x == n).count()))
             .collect();
 
@@ -104,7 +109,7 @@ impl BoardState {
             .map(|(&k, &v)|
                 cmp::min(v, guess.0.iter().filter(|&&x| x == k).count()) as u8)
             .sum();
-        
+
         // Check each index
         let right_position_count: u8 = guess.0.iter()
             .zip(self.code.iter()).filter(|(x, y)| x == y).count() as u8;
@@ -135,4 +140,3 @@ pub enum GameState {
 impl GameState {
 
 }
-
