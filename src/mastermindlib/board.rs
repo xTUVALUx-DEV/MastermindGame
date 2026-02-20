@@ -1,20 +1,55 @@
+use rand::Rng;
 use rgb::RGB8;
 use std::cmp;
 use std::collections::HashMap;
-use rand::Rng;
 
 const COLORS: [RGB8; 9] = [
-    RGB8 { r: 241, g: 196, b:  15 },
-    RGB8 { r:  26, g: 188, b: 156 },
-    RGB8 { r:  52, g: 152, b: 219 },
-    RGB8 { r: 155, g:  89, b: 182 },
-    RGB8 { r: 192, g:  57, b:  43 },
-    RGB8 { r: 243, g: 156, b:  18 },
-    RGB8 { r:  22, g: 160, b: 133 },
-    RGB8 { r:  41, g: 128, b: 185 },
-    RGB8 { r: 142, g:  68, b: 173 },
+    RGB8 {
+        r: 241,
+        g: 196,
+        b: 15,
+    },
+    RGB8 {
+        r: 26,
+        g: 188,
+        b: 156,
+    },
+    RGB8 {
+        r: 52,
+        g: 152,
+        b: 219,
+    },
+    RGB8 {
+        r: 155,
+        g: 89,
+        b: 182,
+    },
+    RGB8 {
+        r: 192,
+        g: 57,
+        b: 43,
+    },
+    RGB8 {
+        r: 243,
+        g: 156,
+        b: 18,
+    },
+    RGB8 {
+        r: 22,
+        g: 160,
+        b: 133,
+    },
+    RGB8 {
+        r: 41,
+        g: 128,
+        b: 185,
+    },
+    RGB8 {
+        r: 142,
+        g: 68,
+        b: 173,
+    },
 ];
-
 
 #[derive(Debug, Default, Clone, serde::Deserialize, serde::Serialize, PartialEq)]
 // Todo: Implement Default
@@ -22,7 +57,7 @@ pub struct BoardSettings {
     pub colors: Vec<RGB8>,
     pub code_length: u8,
     pub max_tries: u8,
-    pub is_ended: bool
+    pub is_ended: bool,
 }
 
 impl BoardSettings {
@@ -50,16 +85,18 @@ impl BoardSettings {
     }
 }
 
-
 #[derive(Debug)]
 pub struct MastermindBoard {
     pub settings: BoardSettings,
-    pub state: BoardState
+    pub state: BoardState,
 }
 
 impl MastermindBoard {
     pub fn new(settings: BoardSettings) -> Self {
-        Self { state: BoardState::new(&settings), settings }
+        Self {
+            state: BoardState::new(&settings),
+            settings,
+        }
     }
 
     pub fn guess(&mut self, guess: &Guess) -> GameState {
@@ -67,7 +104,15 @@ impl MastermindBoard {
             return GameState::GameEnd { 0: false };
         }
 
-        self.state.guess(guess)
+        let response = self.state.guess(guess);
+
+        // Check if that was the last try
+        if let GameState::GuessAnswer(..) = response {
+            if self.state.guesses.len() >= self.settings.max_tries as usize {
+                return GameState::GameEnd { 0: false };
+            }
+        }
+        response
     }
 }
 
@@ -77,12 +122,11 @@ impl Default for MastermindBoard {
     }
 }
 
-
 #[derive(Debug)]
 pub struct BoardState {
-    code: Vec<u8>,
+    pub code: Vec<u8>,
     pub guesses: Vec<Guess>,
-    pub answers: Vec<GameState>
+    pub answers: Vec<GameState>,
 }
 
 impl BoardState {
@@ -94,27 +138,40 @@ impl BoardState {
             .map(|_| rng.random_range(0..settings.colors.len() as u8))
             .collect();
 
-        Self { guesses: Vec::new(), answers: Vec::new(), code: solution }
+        Self {
+            guesses: Vec::new(),
+            answers: Vec::new(),
+            code: solution,
+        }
     }
 
     fn guess(&mut self, guess: &Guess) -> GameState {
         self.guesses.push(guess.clone());
         // Convert the code numbers to a hashmap
-        let numbers_in_code: HashMap<_, _> = self.code.iter()
+        let numbers_in_code: HashMap<_, _> = self
+            .code
+            .iter()
             .map(|&n| (n, self.code.iter().filter(|&&x| x == n).count()))
             .collect();
 
         // Compare the number count for each number
-        let right_numbers_count: u8 = numbers_in_code.iter()
-            .map(|(&k, &v)|
-                cmp::min(v, guess.0.iter().filter(|&&x| x == k).count()) as u8)
+        let right_numbers_count: u8 = numbers_in_code
+            .iter()
+            .map(|(&k, &v)| cmp::min(v, guess.0.iter().filter(|&&x| x == k).count()) as u8)
             .sum();
 
         // Check each index
-        let right_position_count: u8 = guess.0.iter()
-            .zip(self.code.iter()).filter(|(x, y)| x == y).count() as u8;
+        let right_position_count: u8 = guess
+            .0
+            .iter()
+            .zip(self.code.iter())
+            .filter(|(x, y)| x == y)
+            .count() as u8;
 
-        let answer = GameState::GuessAnswer { 0: right_position_count, 1: right_numbers_count-right_position_count };
+        let answer = GameState::GuessAnswer {
+            0: right_position_count,
+            1: right_numbers_count - right_position_count,
+        };
         self.answers.push(answer.clone());
 
         if usize::from(right_position_count) == self.code.len() {
@@ -128,7 +185,6 @@ impl BoardState {
 #[derive(Debug, Clone)]
 pub struct Guess(pub Vec<u8>);
 
-
 #[derive(Debug, Clone)]
 pub enum GameState {
     GuessAnswer(u8, u8),
@@ -137,6 +193,4 @@ pub enum GameState {
     // (has_won)
 }
 
-impl GameState {
-
-}
+impl GameState {}

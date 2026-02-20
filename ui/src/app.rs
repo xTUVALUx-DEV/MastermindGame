@@ -233,6 +233,7 @@ impl eframe::App for App {
         if self.show_loss {
             egui::Modal::new("loss_modal".into()).show(ctx, |ui| {
                 ui.label("You're out of moves");
+                ui.label(format!("The solution was {}", self.board.state.code.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", ")));
                 ui.horizontal(|ui| {
                     if ui.button("OK").clicked() {
                         self.show_loss = false;
